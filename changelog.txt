@@ -1,3 +1,9 @@
+= 1.1.0 — 2026 =
+* Reorganización del menú: Opciones pasa a ser submenú independiente (antes pestaña del hub).
+* Nueva pestaña "Información" en el hub: banner de versión, modo de uso y novedades (changelog).
+* Eliminada la configuración de "Ultron Master" de Opciones (se moverá a un módulo de telemetría independiente).
+* Limpieza de class-options.php y separación en Ultron_Options_Page.
+
 = 1.0.0 — 2025 =
 * Versión inicial de Ultron.
 * Hub principal con pestañas Dashboard, Módulos y Opciones.

@@ -24,7 +24,6 @@ class Ultron_Options {
 	 */
 	public function __construct() {
 		add_action( 'admin_post_ultron_save_options', [ $this, 'handle_save' ] );
-		add_action( 'wp_ajax_ultron_test_master',     [ $this, 'handle_test_master' ] );
 		add_action( 'wp_ajax_ultron_test_github',     [ $this, 'handle_test_github' ] );
 	}
 
@@ -65,11 +64,6 @@ class Ultron_Options {
 		return $this->get( 'github_token', '' );
 	}
 
-	/** @return string */
-	public function get_master_url(): string {
-		return $this->get( 'master_url', '' );
-	}
-
 	/** @return int */
 	public function get_wp_monitor_history_limit(): int {
 		return (int) $this->get( 'wp_monitor_history_limit', 100 );
@@ -108,15 +102,9 @@ class Ultron_Options {
 		check_admin_referer( 'ultron_save_options' );
 
 		$field    = isset( $_POST['save_field'] ) ? sanitize_key( $_POST['save_field'] ) : '';
-		$redirect = admin_url( 'admin.php?page=ultron&tab=options' );
+		$redirect = admin_url( 'admin.php?page=ultron-options' );
 
 		switch ( $field ) {
-
-			case 'master_url':
-				$url = isset( $_POST['master_url'] ) ? esc_url_raw( trim( $_POST['master_url'] ) ) : '';
-				$this->set( 'master_url', $url );
-				$redirect = add_query_arg( 'saved', 'master', $redirect );
-				break;
 
 			case 'github_token':
 				$token = isset( $_POST['github_token'] ) ? sanitize_text_field( trim( $_POST['github_token'] ) ) : '';
@@ -177,39 +165,6 @@ class Ultron_Options {
 
 		wp_redirect( $redirect );
 		exit;
-	}
-
-	/**
-	 * Prueba la conexión con Ultron Master vía AJAX.
-	 *
-	 * @return void
-	 */
-	public function handle_test_master(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Sin permisos.', 'ultron' ) );
-		}
-
-		check_ajax_referer( 'ultron_test_nonce' );
-
-		$url = isset( $_POST['master_url'] ) ? esc_url_raw( trim( $_POST['master_url'] ) ) : '';
-
-		if ( empty( $url ) ) {
-			wp_send_json_error( __( 'URL vacía.', 'ultron' ) );
-		}
-
-		$response = wp_remote_get( trailingslashit( $url ) . 'wp-json/ultron-master/v1/ping', [ 'timeout' => 10 ] );
-
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( $response->get_error_message() );
-		}
-
-		$code = wp_remote_retrieve_response_code( $response );
-
-		if ( $code === 200 ) {
-			wp_send_json_success( __( 'Conexión exitosa con Ultron Master.', 'ultron' ) );
-		} else {
-			wp_send_json_error( sprintf( __( 'Respuesta inesperada: %d', 'ultron' ), $code ) );
-		}
 	}
 
 	/**

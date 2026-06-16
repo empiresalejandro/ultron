@@ -4,7 +4,7 @@ Tags: monitor, admin, database, wordpress, maintenance
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,11 @@ Ultron es un plugin de gestión centralizada para instalaciones de WordPress. Pr
 3. Ve a **Ultron → Módulos** para activar los módulos que necesites.
 
 == Changelog ==
+
+= 1.1.0 =
+* Opciones ahora es un submenú independiente (antes pestaña del hub).
+* Nueva pestaña Información en el hub: banner de versión, modo de uso y novedades.
+* Eliminada la configuración de Ultron Master del core (se moverá a un módulo de telemetría).
 
 = 1.0.0 =
 * Versión inicial.

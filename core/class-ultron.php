@@ -3,10 +3,12 @@
  * Clase principal de Ultron.
  *
  * Inicializa el plugin, registra el menú, carga los módulos,
- * encola los assets y gestiona las pestañas del hub.
+ * encola los assets y gestiona las pestañas del hub (Dashboard,
+ * Módulos, Información). La página Opciones vive en su propia
+ * clase (Ultron_Options_Page) como submenú independiente.
  *
  * @package Ultron
- * @since   1.0.0
+ * @since   1.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -44,6 +46,13 @@ class Ultron {
 	private Ultron_Monitor_Page $monitor_page;
 
 	/**
+	 * Instancia de la página Opciones.
+	 *
+	 * @var Ultron_Options_Page
+	 */
+	private Ultron_Options_Page $options_page;
+
+	/**
 	 * Obtiene la instancia única de la clase.
 	 *
 	 * @return Ultron
@@ -63,10 +72,11 @@ class Ultron {
 		$this->modules      = new Ultron_Modules();
 		$this->options      = new Ultron_Options();
 		$this->monitor_page = new Ultron_Monitor_Page( $this->modules );
+		$this->options_page = new Ultron_Options_Page( $this->options );
 		$this->modules->load_active_modules();
 
-		add_action( 'admin_menu',             [ $this, 'register_menu' ] );
-		add_action( 'admin_enqueue_scripts',  [ $this, 'enqueue_assets' ] );
+		add_action( 'admin_menu',            [ $this, 'register_menu' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
 	/**
@@ -78,6 +88,7 @@ class Ultron {
 		require_once ULTRON_PATH . 'core/class-modules.php';
 		require_once ULTRON_PATH . 'core/class-options.php';
 		require_once ULTRON_PATH . 'core/class-monitor-page.php';
+		require_once ULTRON_PATH . 'core/class-options-page.php';
 	}
 
 	/**
@@ -90,6 +101,7 @@ class Ultron {
 		$ultron_pages = [
 			'toplevel_page_ultron',
 			'ultron_page_ultron-monitor',
+			'ultron_page_ultron-options',
 		];
 
 		if ( ! in_array( $hook_suffix, $ultron_pages, true ) ) {
@@ -122,7 +134,8 @@ class Ultron {
 	}
 
 	/**
-	 * Renderiza la página principal del hub con pestañas.
+	 * Renderiza la página principal del hub con pestañas
+	 * Dashboard, Módulos e Información.
 	 *
 	 * @return void
 	 */
@@ -141,9 +154,9 @@ class Ultron {
 				   class="nav-tab <?php echo $tab === 'modules' ? 'nav-tab-active' : ''; ?>">
 					<?php _e( 'Módulos', 'ultron' ); ?>
 				</a>
-				<a href="?page=ultron&tab=options"
-				   class="nav-tab <?php echo $tab === 'options' ? 'nav-tab-active' : ''; ?>">
-					<?php _e( 'Opciones', 'ultron' ); ?>
+				<a href="?page=ultron&tab=info"
+				   class="nav-tab <?php echo $tab === 'info' ? 'nav-tab-active' : ''; ?>">
+					<?php _e( 'Información', 'ultron' ); ?>
 				</a>
 			</nav>
 
@@ -153,8 +166,8 @@ class Ultron {
 					case 'modules':
 						$this->render_tab_modules();
 						break;
-					case 'options':
-						$this->render_tab_options();
+					case 'info':
+						$this->render_tab_info();
 						break;
 					default:
 						$this->render_tab_dashboard();
@@ -286,308 +299,111 @@ class Ultron {
 	}
 
 	/**
-	 * Renderiza la pestaña Opciones.
+	 * Parsea el archivo changelog.txt a un array de entradas.
+	 * Formato esperado por entrada: "= versión — fecha =" seguido de líneas "* texto".
+	 *
+	 * @return array
+	 */
+	private function parse_changelog(): array {
+		$path = ULTRON_PATH . 'changelog.txt';
+
+		if ( ! file_exists( $path ) ) {
+			return [];
+		}
+
+		$content = file_get_contents( $path );
+		$entries  = [];
+
+		// Divide por bloques que empiezan con "= ... ="
+		$blocks = preg_split( '/^=\s*(.+?)\s*=\s*$/m', $content, -1, PREG_SPLIT_DELIM_CAPTURE );
+
+		// $blocks alterna: [preámbulo, título1, cuerpo1, título2, cuerpo2, ...]
+		for ( $i = 1; $i < count( $blocks ); $i += 2 ) {
+			$title = trim( $blocks[ $i ] );
+			$body  = trim( $blocks[ $i + 1 ] ?? '' );
+
+			$items = [];
+			foreach ( preg_split( '/\r?\n/', $body ) as $line ) {
+				$line = trim( $line );
+				if ( str_starts_with( $line, '*' ) ) {
+					$items[] = trim( substr( $line, 1 ) );
+				}
+			}
+
+			$entries[] = [
+				'title' => $title,
+				'items' => $items,
+			];
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * Renderiza la pestaña Información: banner, modo de uso y novedades.
 	 *
 	 * @return void
 	 */
-	private function render_tab_options(): void {
-		$master_url         = $this->options->get_master_url();
-		$github_token       = $this->options->get_github_token();
-		$wp_history_limit   = $this->options->get_wp_monitor_history_limit();
-		$st_history_limit   = $this->options->get_st_monitor_history_limit();
-		$error_log_limit_mb = $this->options->get_error_log_limit_mb();
-		$update_checker     = $this->options->get_update_checker_enabled();
-		$delete_on_uninstall = $this->options->get_delete_on_uninstall();
-		$nonce              = wp_create_nonce( 'ultron_test_nonce' );
-
-		$saved = isset( $_GET['saved'] ) ? sanitize_key( $_GET['saved'] ) : '';
-		$error = isset( $_GET['error'] ) ? sanitize_key( $_GET['error'] ) : '';
-
-		$saved_messages = [
-			'master'     => __( 'URL de Ultron Master guardada correctamente.', 'ultron' ),
-			'github'     => __( 'Token de GitHub guardado correctamente.', 'ultron' ),
-			'wp_history' => __( 'Límite histórico de WordPress Monitor guardado.', 'ultron' ),
-			'st_history' => __( 'Límite histórico de Storage Monitor guardado.', 'ultron' ),
-			'error_log'  => __( 'Umbral de error.log guardado correctamente.', 'ultron' ),
-			'update_checker' => __( 'Configuración de actualizaciones guardada.', 'ultron' ),
-			'uninstall'  => __( 'Preferencia de desinstalación guardada.', 'ultron' ),
-		];
+	private function render_tab_info(): void {
+		$changelog = $this->parse_changelog();
 		?>
 
-		<?php if ( $saved && isset( $saved_messages[ $saved ] ) ) : ?>
-			<div class="notice notice-success is-dismissible">
-				<p><?php echo esc_html( $saved_messages[ $saved ] ); ?></p>
-			</div>
+		<!-- Banner de versión -->
+		<div style="
+			height: 50vh;
+			min-height: 320px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			background: linear-gradient(135deg, #1d2327 0%, #2271b1 100%);
+			border-radius: var(--ultron-radius);
+			color: #fff;
+			margin-bottom: 30px;
+		">
+			<span class="dashicons dashicons-superhero" style="font-size: 64px; width: 64px; height: 64px; opacity: .9;"></span>
+			<h1 style="color:#fff; font-size: 36px; margin: 16px 0 4px;">Ultron</h1>
+			<p style="font-size: 14px; opacity: .85; margin: 0;">
+				<?php echo sprintf( __( 'Versión %s', 'ultron' ), esc_html( ULTRON_VERSION ) ); ?>
+			</p>
+		</div>
+
+		<!-- Modo de uso -->
+		<p class="ultron-section-title"><?php _e( 'Modo de uso', 'ultron' ); ?></p>
+		<div class="ultron-options-section">
+			<p><?php _e( 'Ultron es un hub modular: cada funcionalidad vive en un módulo independiente que puedes activar o desactivar sin afectar al resto.', 'ultron' ); ?></p>
+			<ol style="margin-left: 18px; line-height: 1.8;">
+				<li><?php _e( 'Ve a la pestaña Módulos y activa los que necesites.', 'ultron' ); ?></li>
+				<li><?php _e( 'Los módulos de monitoreo (WordPress, Plugins, Almacenamiento, Base de datos) aparecen agrupados en el submenú Monitor.', 'ultron' ); ?></li>
+				<li><?php _e( 'El Dashboard muestra un resumen (widget) de cada módulo activo que lo soporte.', 'ultron' ); ?></li>
+				<li><?php _e( 'La configuración general del plugin vive en el submenú Opciones.', 'ultron' ); ?></li>
+			</ol>
+		</div>
+
+		<!-- Novedades / Changelog -->
+		<p class="ultron-section-title"><?php _e( 'Novedades', 'ultron' ); ?></p>
+
+		<?php if ( empty( $changelog ) ) : ?>
+			<p><?php _e( 'No se encontró el historial de cambios.', 'ultron' ); ?></p>
+		<?php else : ?>
+			<?php foreach ( $changelog as $entry ) : ?>
+				<details class="ultron-details">
+					<summary><?php echo esc_html( $entry['title'] ); ?></summary>
+					<div style="padding: 14px;">
+						<?php if ( empty( $entry['items'] ) ) : ?>
+							<p style="margin:0; color: var(--ultron-muted);"><?php _e( 'Sin detalles.', 'ultron' ); ?></p>
+						<?php else : ?>
+							<ul style="margin: 0 0 0 18px; line-height: 1.7;">
+								<?php foreach ( $entry['items'] as $item ) : ?>
+									<li><?php echo esc_html( $item ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+				</details>
+			<?php endforeach; ?>
 		<?php endif; ?>
-
-		<?php if ( $error === 'invalid_limit' ) : ?>
-			<div class="notice notice-error is-dismissible">
-				<p><?php _e( 'El límite debe ser un número mayor que cero.', 'ultron' ); ?></p>
-			</div>
-		<?php endif; ?>
-
-		<!-- Ultron Master -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'Ultron Master', 'ultron' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="master_url">
-				<table class="form-table">
-					<tr>
-						<th><label for="master_url"><?php _e( 'URL Ultron Master', 'ultron' ); ?></label></th>
-						<td>
-							<input type="url" id="master_url" name="master_url"
-							       value="<?php echo esc_attr( $master_url ); ?>"
-							       class="regular-text" placeholder="https://tudominio.com">
-							<button type="button" class="button" id="test-master">
-								<?php _e( 'Probar conexión', 'ultron' ); ?>
-							</button>
-							<span id="master-result" style="margin-left:8px;font-size:13px;"></span>
-							<p class="description"><?php _e( 'URL del sitio donde está instalado Ultron Master.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary" id="master-save-btn" disabled>
-						<?php _e( 'Guardar URL', 'ultron' ); ?>
-					</button>
-					<span style="margin-left:10px;font-size:12px;color:var(--ultron-muted);">
-						<?php _e( 'Prueba la conexión antes de guardar.', 'ultron' ); ?>
-					</span>
-				</p>
-			</form>
-		</div>
-
-		<!-- GitHub -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'GitHub', 'ultron' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="github_token">
-				<table class="form-table">
-					<tr>
-						<th><label for="github_token"><?php _e( 'Token de GitHub', 'ultron' ); ?></label></th>
-						<td>
-							<input type="password" id="github_token" name="github_token"
-							       value="<?php echo ! empty( $github_token ) ? esc_attr( $github_token ) : ''; ?>"
-							       class="regular-text"
-							       placeholder="<?php echo ! empty( $github_token ) ? '••••••••••••••••' : __( 'Introduce el token', 'ultron' ); ?>">
-							<button type="button" class="button" id="test-github">
-								<?php _e( 'Probar conexión', 'ultron' ); ?>
-							</button>
-							<span id="github-result" style="margin-left:8px;font-size:13px;"></span>
-							<p class="description"><?php _e( 'Token de acceso personal para repositorios privados.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary" id="github-save-btn" disabled>
-						<?php _e( 'Guardar token', 'ultron' ); ?>
-					</button>
-					<span style="margin-left:10px;font-size:12px;color:var(--ultron-muted);">
-						<?php _e( 'Prueba la conexión antes de guardar.', 'ultron' ); ?>
-					</span>
-				</p>
-			</form>
-		</div>
-
-		<!-- Actualizaciones -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'Actualizaciones', 'ultron' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="update_checker">
-				<table class="form-table">
-					<tr>
-						<th><label for="update_checker"><?php _e( 'Plugin Update Checker', 'ultron' ); ?></label></th>
-						<td>
-							<input type="checkbox" id="update_checker" name="update_checker" value="1"
-							       <?php checked( $update_checker, true ); ?>>
-							<label for="update_checker"><?php _e( 'Activar detección automática de actualizaciones (cada 24h)', 'ultron' ); ?></label>
-							<p class="description"><?php _e( 'WordPress avisará cuando haya una nueva versión disponible en GitHub.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-				</p>
-			</form>
-		</div>
-
-		<!-- Histórico de datos -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'Histórico de datos', 'ultron' ); ?></h2>
-
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="wp_monitor_history_limit">
-				<table class="form-table">
-					<tr>
-						<th><label for="wp_monitor_history_limit"><?php _e( 'Límite WordPress Monitor', 'ultron' ); ?></label></th>
-						<td>
-							<input type="number" id="wp_monitor_history_limit" name="wp_monitor_history_limit"
-							       value="<?php echo esc_attr( $wp_history_limit ); ?>"
-							       class="small-text" min="1" step="1">
-							<?php _e( 'registros', 'ultron' ); ?>
-							<p class="description"><?php _e( 'Número máximo de snapshots guardados para WordPress Monitor.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-				</p>
-			</form>
-
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="st_monitor_history_limit">
-				<table class="form-table">
-					<tr>
-						<th><label for="st_monitor_history_limit"><?php _e( 'Límite Storage Monitor', 'ultron' ); ?></label></th>
-						<td>
-							<input type="number" id="st_monitor_history_limit" name="st_monitor_history_limit"
-							       value="<?php echo esc_attr( $st_history_limit ); ?>"
-							       class="small-text" min="1" step="1">
-							<?php _e( 'registros', 'ultron' ); ?>
-							<p class="description"><?php _e( 'Número máximo de snapshots guardados para Storage Monitor.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-				</p>
-			</form>
-		</div>
-
-		<!-- Alertas -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'Alertas', 'ultron' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="error_log_limit_mb">
-				<table class="form-table">
-					<tr>
-						<th><label for="error_log_limit_mb"><?php _e( 'Umbral error.log', 'ultron' ); ?></label></th>
-						<td>
-							<input type="number" id="error_log_limit_mb" name="error_log_limit_mb"
-							       value="<?php echo esc_attr( $error_log_limit_mb ); ?>"
-							       class="small-text" min="1" step="1">
-							<?php _e( 'MB', 'ultron' ); ?>
-							<p class="description"><?php _e( 'El Dashboard alertará cuando error.log supere este tamaño.', 'ultron' ); ?></p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-				</p>
-			</form>
-		</div>
-
-		<!-- Desinstalación -->
-		<div class="ultron-options-section" style="border-color: #f8d7da;">
-			<h2 style="color:var(--ultron-danger);"><?php _e( 'Desinstalación', 'ultron' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php wp_nonce_field( 'ultron_save_options' ); ?>
-				<input type="hidden" name="action" value="ultron_save_options">
-				<input type="hidden" name="save_field" value="delete_on_uninstall">
-				<table class="form-table">
-					<tr>
-						<th><label for="delete_on_uninstall"><?php _e( 'Eliminar todos los datos', 'ultron' ); ?></label></th>
-						<td>
-							<input type="checkbox" id="delete_on_uninstall" name="delete_on_uninstall" value="1"
-							       <?php checked( $delete_on_uninstall, true ); ?>>
-							<label for="delete_on_uninstall">
-								<?php _e( 'Al desinstalar Ultron, eliminar tablas de base de datos, opciones y archivos de módulos.', 'ultron' ); ?>
-							</label>
-							<p class="description" style="color:var(--ultron-danger);">
-								<?php _e( '⚠️ Esta acción es irreversible. Todos los datos históricos se perderán permanentemente.', 'ultron' ); ?>
-							</p>
-						</td>
-					</tr>
-				</table>
-				<p class="submit">
-					<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-				</p>
-			</form>
-		</div>
-
-		<!-- Información -->
-		<div class="ultron-options-section">
-			<h2><?php _e( 'Información', 'ultron' ); ?></h2>
-			<table class="form-table">
-				<tr>
-					<th><?php _e( 'Versión de Ultron', 'ultron' ); ?></th>
-					<td><span style="font-size:13px;"><?php echo esc_html( ULTRON_VERSION ); ?></span></td>
-				</tr>
-			</table>
-		</div>
-
-		<script>
-		( function() {
-			const ajaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-			const nonce   = '<?php echo esc_js( $nonce ); ?>';
-
-			function showResult( id, success, message ) {
-				const el = document.getElementById( id );
-				el.textContent = message;
-				el.style.color = success ? '#00a32a' : '#d63638';
-			}
-
-			document.getElementById( 'test-master' ).addEventListener( 'click', function() {
-				const url = document.getElementById( 'master_url' ).value.trim();
-				if ( ! url ) {
-					showResult( 'master-result', false, '<?php echo esc_js( __( 'Introduce una URL.', 'ultron' ) ); ?>' );
-					return;
-				}
-				this.disabled = true;
-				showResult( 'master-result', true, '<?php echo esc_js( __( 'Probando...', 'ultron' ) ); ?>' );
-				const data = new FormData();
-				data.append( 'action', 'ultron_test_master' );
-				data.append( '_ajax_nonce', nonce );
-				data.append( 'master_url', url );
-				fetch( ajaxUrl, { method: 'POST', body: data } )
-					.then( r => r.json() )
-					.then( res => {
-						showResult( 'master-result', res.success, res.data );
-						document.getElementById( 'master-save-btn' ).disabled = ! res.success;
-					} )
-					.catch( () => {
-						showResult( 'master-result', false, '<?php echo esc_js( __( 'Error de conexión.', 'ultron' ) ); ?>' );
-					} )
-					.finally( () => { this.disabled = false; } );
-			} );
-
-			document.getElementById( 'test-github' ).addEventListener( 'click', function() {
-				const token = document.getElementById( 'github_token' ).value.trim();
-				if ( ! token ) {
-					showResult( 'github-result', false, '<?php echo esc_js( __( 'Introduce un token.', 'ultron' ) ); ?>' );
-					return;
-				}
-				this.disabled = true;
-				showResult( 'github-result', true, '<?php echo esc_js( __( 'Probando...', 'ultron' ) ); ?>' );
-				const data = new FormData();
-				data.append( 'action', 'ultron_test_github' );
-				data.append( '_ajax_nonce', nonce );
-				data.append( 'github_token', token );
-				fetch( ajaxUrl, { method: 'POST', body: data } )
-					.then( r => r.json() )
-					.then( res => {
-						showResult( 'github-result', res.success, res.data );
-						document.getElementById( 'github-save-btn' ).disabled = ! res.success;
-					} )
-					.catch( () => {
-						showResult( 'github-result', false, '<?php echo esc_js( __( 'Error de conexión.', 'ultron' ) ); ?>' );
-					} )
-					.finally( () => { this.disabled = false; } );
-			} );
-		} )();
-		</script>
 
 		<?php
 	}
