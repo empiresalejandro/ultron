@@ -1,7 +1,7 @@
 {
     "wp-monitor": {
-        "name": "WP Monitor",
-        "description": "Monitor completo de la instalación de WordPress, servidor y seguridad.",
+        "name": "WordPress Monitor",
+        "description": "Monitor completo de la instalación de WordPress, servidor, configuración, seguridad y endpoints.",
         "version": "1.0.0",
         "private": false,
         "repo": null,
@@ -9,7 +9,7 @@
         "bundled": true
     },
     "db-monitor": {
-        "name": "DB Monitor",
+        "name": "Database Monitor",
         "description": "Monitor de base de datos con truncate seguro.",
         "version": "1.0.0",
         "private": false,
@@ -18,7 +18,7 @@
         "bundled": true
     },
     "st-monitor": {
-        "name": "ST Monitor",
+        "name": "Storage Monitor",
         "description": "Monitor de almacenamiento, inodos y tamaño de carpetas.",
         "version": "1.0.0",
         "private": false,

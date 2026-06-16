@@ -1,0 +1,282 @@
+/**
+ * Ultron Admin Styles
+ * Estilos consistentes para el hub y todos los módulos.
+ *
+ * @package Ultron
+ * @since   1.0.0
+ */
+
+/* ─── Variables ─────────────────────────────────────────────────────────── */
+:root {
+	--ultron-ok:      #00a32a;
+	--ultron-warning: #dba617;
+	--ultron-danger:  #d63638;
+	--ultron-muted:   #646970;
+	--ultron-border:  #e0e0e0;
+	--ultron-bg:      #f6f7f7;
+	--ultron-white:   #ffffff;
+	--ultron-radius:  4px;
+	--ultron-shadow:  0 1px 3px rgba(0,0,0,.07);
+}
+
+/* ─── Cards / Widgets del Dashboard ─────────────────────────────────────── */
+.ultron-widgets {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 280px, 1fr ) );
+	gap: 20px;
+	margin-top: 16px;
+}
+
+.ultron-widget {
+	background: var(--ultron-white);
+	border: 1px solid var(--ultron-border);
+	border-left: 4px solid #2271b1;
+	border-radius: var(--ultron-radius);
+	padding: 16px 20px;
+	box-shadow: var(--ultron-shadow);
+}
+
+.ultron-widget.is-ok      { border-left-color: var(--ultron-ok); }
+.ultron-widget.is-warning { border-left-color: var(--ultron-warning); }
+.ultron-widget.is-danger  { border-left-color: var(--ultron-danger); }
+
+.ultron-widget h3 {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--ultron-muted);
+	border-bottom: 1px solid var(--ultron-border);
+	padding-bottom: 8px;
+}
+
+.ultron-widget p {
+	margin: 6px 0;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.ultron-widget .ultron-widget-alert {
+	background: #fcf0f1;
+	border: 1px solid #f8d7da;
+	border-radius: var(--ultron-radius);
+	padding: 8px 10px;
+	font-size: 12px;
+	color: var(--ultron-danger);
+	margin-top: 10px;
+}
+
+/* ─── Tablas ─────────────────────────────────────────────────────────────── */
+.ultron-table {
+	border-collapse: collapse;
+	width: 100%;
+	max-width: 700px;
+	font-size: 13px;
+	background: var(--ultron-white);
+	box-shadow: var(--ultron-shadow);
+	border-radius: var(--ultron-radius);
+	overflow: hidden;
+	margin-bottom: 24px;
+}
+
+.ultron-table th {
+	background: var(--ultron-bg);
+	color: var(--ultron-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	padding: 8px 12px;
+	text-align: left;
+	border-bottom: 1px solid var(--ultron-border);
+}
+
+.ultron-table td {
+	padding: 9px 12px;
+	border-bottom: 1px solid #f0f0f0;
+	color: #1d2327;
+}
+
+.ultron-table tr:last-child td {
+	border-bottom: none;
+}
+
+.ultron-table tr:hover td {
+	background: #f8f9fa;
+}
+
+/* ─── Cabecera de sección ────────────────────────────────────────────────── */
+.ultron-section-title {
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--ultron-muted);
+	margin: 24px 0 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--ultron-border);
+	max-width: 700px;
+}
+
+/* ─── Barra de acciones (botones + info) ─────────────────────────────────── */
+.ultron-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.ultron-actions-meta {
+	font-size: 12px;
+	color: var(--ultron-muted);
+	margin-bottom: 16px;
+}
+
+/* ─── Badges de estado ───────────────────────────────────────────────────── */
+.ultron-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 500;
+	padding: 2px 8px;
+	border-radius: 20px;
+}
+
+.ultron-badge.ok      { background: #edfaef; color: var(--ultron-ok); }
+.ultron-badge.warning { background: #fef8ec; color: var(--ultron-warning); }
+.ultron-badge.danger  { background: #fcf0f1; color: var(--ultron-danger); }
+.ultron-badge.muted   { background: #f0f0f0; color: var(--ultron-muted); }
+
+/* ─── Details/Summary (colapsables) ─────────────────────────────────────── */
+.ultron-details {
+	max-width: 700px;
+	margin-bottom: 10px;
+	border: 1px solid var(--ultron-border);
+	border-radius: var(--ultron-radius);
+	overflow: hidden;
+}
+
+.ultron-details summary {
+	padding: 10px 14px;
+	cursor: pointer;
+	font-weight: 600;
+	font-size: 13px;
+	background: var(--ultron-bg);
+	user-select: none;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ultron-details summary::-webkit-details-marker { display: none; }
+
+.ultron-details summary::before {
+	content: '▶';
+	font-size: 10px;
+	color: var(--ultron-muted);
+	transition: transform .15s;
+}
+
+.ultron-details[open] summary::before {
+	transform: rotate(90deg);
+}
+
+.ultron-details .ultron-table {
+	border-radius: 0;
+	box-shadow: none;
+	margin-bottom: 0;
+	max-width: 100%;
+}
+
+/* ─── Enlace de acción (truncate, etc.) ──────────────────────────────────── */
+.ultron-action-link {
+	font-size: 12px;
+	color: var(--ultron-danger);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.ultron-action-link:hover {
+	text-decoration: underline;
+}
+
+/* ─── Página de confirmación ─────────────────────────────────────────────── */
+.ultron-confirm-box {
+	max-width: 480px;
+	background: var(--ultron-white);
+	border: 1px solid var(--ultron-border);
+	border-radius: var(--ultron-radius);
+	padding: 24px;
+	box-shadow: var(--ultron-shadow);
+}
+
+.ultron-confirm-box .ultron-confirm-warning {
+	background: #fcf0f1;
+	border-left: 4px solid var(--ultron-danger);
+	padding: 10px 14px;
+	border-radius: var(--ultron-radius);
+	font-size: 13px;
+	margin-bottom: 16px;
+}
+
+.ultron-confirm-box label {
+	display: block;
+	font-size: 13px;
+	margin-bottom: 6px;
+	color: #1d2327;
+}
+
+.ultron-confirm-box input[type="text"] {
+	width: 100%;
+	margin-bottom: 14px;
+}
+
+.ultron-confirm-box .ultron-confirm-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+/* ─── Opciones ───────────────────────────────────────────────────────────── */
+.ultron-options-section {
+	max-width: 700px;
+	background: var(--ultron-white);
+	border: 1px solid var(--ultron-border);
+	border-radius: var(--ultron-radius);
+	padding: 20px 24px;
+	margin-bottom: 20px;
+	box-shadow: var(--ultron-shadow);
+}
+
+.ultron-options-section h2 {
+	font-size: 14px;
+	font-weight: 600;
+	margin: 0 0 16px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--ultron-border);
+}
+
+.ultron-options-section .form-table th {
+	width: 220px;
+	font-size: 13px;
+}
+
+/* ─── Módulos — tabla de estado ──────────────────────────────────────────── */
+.ultron-status-active   { color: var(--ultron-ok); font-weight: 500; }
+.ultron-status-inactive { color: var(--ultron-muted); }
+
+/* ─── Responsive básico ──────────────────────────────────────────────────── */
+@media ( max-width: 782px ) {
+	.ultron-widgets {
+		grid-template-columns: 1fr;
+	}
+	.ultron-table,
+	.ultron-options-section,
+	.ultron-confirm-box {
+		max-width: 100%;
+	}
+}

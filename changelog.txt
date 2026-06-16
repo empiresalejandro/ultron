@@ -1,0 +1,11 @@
+= 1.0.0 — 2025 =
+* Versión inicial de Ultron.
+* Hub principal con pestañas Dashboard, Módulos y Opciones.
+* Sistema de módulos activables/desactivables individualmente.
+* Submenú Monitor compartido con orden fijo de pestañas.
+* Módulo WordPress Monitor: snapshot de instalación, servidor, configuración, seguridad, archivos expuestos, endpoints y usuarios.
+* Módulo Database Monitor: listado de tablas con estado de salud y truncate seguro con doble confirmación.
+* Módulo Storage Monitor: inodos y tamaño de instalación y uploads, desglose por año/mes, vigilancia de error.log.
+* Módulo Plugins Monitor: detección de plugins recomendados, conflictos, licencias premium y acciones rápidas.
+* Opciones: conexión con Ultron Master, token de GitHub, límites de histórico, umbral de error.log, actualización automática y desinstalación limpia.
+* Assets CSS unificados con sistema de variables y clases consistentes.
