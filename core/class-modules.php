@@ -225,6 +225,24 @@ class Ultron_Modules {
 	}
 
 	/**
+	 * Carga los módulos activos registrando su archivo principal.
+	 *
+	 * @return void
+	 */
+	public function load_active_modules(): void {
+		$local = $this->get_local_modules();
+
+		foreach ( $local as $slug => $module ) {
+			if ( $module['active'] ) {
+				$module_file = $module['path'] . '/module.php';
+				if ( file_exists( $module_file ) ) {
+					require_once $module_file;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Maneja la actualización de un módulo desde GitHub.
 	 *
 	 * @return void
@@ -271,10 +289,9 @@ class Ultron_Modules {
 
 		$module_info = $remote[ $slug ];
 
-		if ( ! empty( $module_info['bundled'] ) ) {
-			return new WP_Error( 'ultron_module_bundled', __( 'Este módulo viene incluido con Ultron y no se actualiza desde GitHub.', 'ultron' ) );
-		}
-
+		// "bundled" ahora solo indica que el módulo viene preinstalado en el
+		// zip de Ultron — no implica que sea inactualizable. El único
+		// requisito real para poder actualizar es que tenga un repo válido.
 		if ( empty( $module_info['repo'] ) ) {
 			return new WP_Error( 'ultron_module_no_repo', __( 'El módulo no tiene un repositorio configurado.', 'ultron' ) );
 		}

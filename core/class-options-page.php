@@ -59,7 +59,6 @@ class Ultron_Options_Page {
 		$wp_history_limit    = $this->options->get_wp_monitor_history_limit();
 		$st_history_limit    = $this->options->get_st_monitor_history_limit();
 		$error_log_limit_mb  = $this->options->get_error_log_limit_mb();
-		$update_checker      = $this->options->get_update_checker_enabled();
 		$delete_on_uninstall = $this->options->get_delete_on_uninstall();
 		$nonce               = wp_create_nonce( 'ultron_test_nonce' );
 
@@ -71,7 +70,6 @@ class Ultron_Options_Page {
 			'wp_history'     => __( 'Límite histórico de WordPress Monitor guardado.', 'ultron' ),
 			'st_history'     => __( 'Límite histórico de Storage Monitor guardado.', 'ultron' ),
 			'error_log'      => __( 'Umbral de error.log guardado correctamente.', 'ultron' ),
-			'update_checker' => __( 'Configuración de actualizaciones guardada.', 'ultron' ),
 			'uninstall'      => __( 'Preferencia de desinstalación guardada.', 'ultron' ),
 		];
 		?>
@@ -124,29 +122,6 @@ class Ultron_Options_Page {
 				</form>
 			</div>
 
-			<!-- Actualizaciones -->
-			<div class="ultron-options-section">
-				<h2><?php _e( 'Actualizaciones', 'ultron' ); ?></h2>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<?php wp_nonce_field( 'ultron_save_options' ); ?>
-					<input type="hidden" name="action" value="ultron_save_options">
-					<input type="hidden" name="save_field" value="update_checker">
-					<table class="form-table">
-						<tr>
-							<th><label for="update_checker"><?php _e( 'Plugin Update Checker', 'ultron' ); ?></label></th>
-							<td>
-								<input type="checkbox" id="update_checker" name="update_checker" value="1"
-								       <?php checked( $update_checker, true ); ?>>
-								<label for="update_checker"><?php _e( 'Activar detección automática de actualizaciones', 'ultron' ); ?></label>
-								<p class="description"><?php _e( 'WordPress avisará cuando haya una nueva versión disponible en GitHub, siguiendo su ciclo normal de revisión de actualizaciones.', 'ultron' ); ?></p>
-							</td>
-						</tr>
-					</table>
-					<p class="submit">
-						<button type="submit" class="button button-primary"><?php _e( 'Guardar', 'ultron' ); ?></button>
-					</p>
-				</form>
-			</div>
 
 			<!-- Histórico de datos -->
 			<div class="ultron-options-section">

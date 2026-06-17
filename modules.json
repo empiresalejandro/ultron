@@ -4,7 +4,7 @@
         "description": "Monitor completo de la instalación de WordPress, servidor, configuración, seguridad y endpoints.",
         "version": "1.0.0",
         "private": false,
-        "repo": null,
+        "repo": "empiresalejandro/ultron-mod-wp-monitor",
         "category": "core",
         "bundled": true
     },
@@ -13,7 +13,7 @@
         "description": "Monitor de base de datos con truncate seguro.",
         "version": "1.0.0",
         "private": false,
-        "repo": null,
+        "repo": "empiresalejandro/ultron-mod-db-monitor",
         "category": "core",
         "bundled": true
     },
@@ -22,7 +22,7 @@
         "description": "Monitor de almacenamiento, inodos y tamaño de carpetas.",
         "version": "1.0.0",
         "private": false,
-        "repo": null,
+        "repo": "empiresalejandro/ultron-mod-st-monitor",
         "category": "core",
         "bundled": true
     },
@@ -31,7 +31,7 @@
         "description": "Lista y detecta plugins recomendados instalados y activos.",
         "version": "1.0.0",
         "private": false,
-        "repo": null,
+        "repo": "empiresalejandro/ultron-mod-plugins-monitor",
         "category": "core",
         "bundled": true
     }

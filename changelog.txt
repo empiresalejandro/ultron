@@ -1,8 +1,8 @@
 = 1.2.0 — 2026 =
-* Integrado Plugin Update Checker (YahnisElsts) para detectar actualizaciones del core desde GitHub, activable desde Opciones.
-* Nueva lógica de descarga e instalación de módulos addon desde su repositorio de GitHub (tags de versión vía la API zipball), soportando repos públicos y privados con token.
-* Botón "Actualizar" en la pestaña Módulos para módulos no-bundled con nueva versión disponible.
-* Ajustado el texto del toggle de actualizaciones: ya no se promete una frecuencia fija, se sigue el ciclo nativo de revisión de WordPress.
+* Sistema de actualizaciones definido: el core de Ultron se actualiza siempre de forma manual (subiendo el zip); los módulos (core y addon) se actualizan desde GitHub leyendo modules.json y comparando versiones.
+* Los módulos core (WordPress Monitor, Database Monitor, Storage Monitor, Plugins Monitor) ahora tienen su propio repositorio en GitHub y son actualizables individualmente, aunque siguen viniendo preinstalados en el zip de Ultron.
+* Nueva lógica de descarga e instalación de módulos desde su repositorio de GitHub (tags de versión vía la API zipball de GitHub), soportando repos públicos y privados con token.
+* Botón "Actualizar" en la pestaña Módulos para cualquier módulo con nueva versión disponible.
 
 = 1.1.0 — 2026 =
 * Reorganización del menú: Opciones pasa a ser submenú independiente (antes pestaña del hub).

@@ -80,11 +80,6 @@ class Ultron_Options {
 	}
 
 	/** @return bool */
-	public function get_update_checker_enabled(): bool {
-		return (bool) $this->get( 'update_checker_enabled', false );
-	}
-
-	/** @return bool */
 	public function get_delete_on_uninstall(): bool {
 		return (bool) $this->get( 'delete_on_uninstall', false );
 	}
@@ -144,12 +139,6 @@ class Ultron_Options {
 				} else {
 					$redirect = add_query_arg( 'error', 'invalid_limit', $redirect );
 				}
-				break;
-
-			case 'update_checker':
-				$enabled = isset( $_POST['update_checker'] ) && $_POST['update_checker'] === '1';
-				$this->set( 'update_checker_enabled', $enabled );
-				$redirect = add_query_arg( 'saved', 'update_checker', $redirect );
 				break;
 
 			case 'delete_on_uninstall':

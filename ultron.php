@@ -36,32 +36,3 @@ function ultron_init(): void {
 	Ultron::get_instance();
 }
 add_action( 'plugins_loaded', 'ultron_init' );
-
-/**
- * Inicializa el Plugin Update Checker para el core de Ultron,
- * solo si el usuario activó la opción correspondiente en Opciones.
- *
- * @return void
- */
-function ultron_init_update_checker(): void {
-	if ( ! get_option( 'ultron_update_checker_enabled', false ) ) {
-		return;
-	}
-
-	$puc_loader = ULTRON_PATH . 'core/vendor/plugin-update-checker/plugin-update-checker.php';
-
-	if ( ! file_exists( $puc_loader ) ) {
-		return;
-	}
-
-	require_once $puc_loader;
-
-	$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://github.com/empiresalejandro/ultron/',
-		__FILE__,
-		'ultron'
-	);
-
-	$update_checker->setBranch( 'main' );
-}
-add_action( 'init', 'ultron_init_update_checker' );

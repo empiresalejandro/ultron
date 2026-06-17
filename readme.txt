@@ -31,9 +31,9 @@ Ultron es un plugin de gestión centralizada para instalaciones de WordPress. Pr
 == Changelog ==
 
 = 1.2.0 =
-* Plugin Update Checker integrado para detectar actualizaciones del core desde GitHub.
-* Lógica de descarga e instalación de módulos addon desde GitHub (tags de versión, públicos y privados).
-* Botón "Actualizar" en la pestaña Módulos.
+* Sistema de actualizaciones definido: el core se actualiza manualmente; los módulos se actualizan desde GitHub vía modules.json.
+* Los módulos core ahora tienen repositorio propio y son actualizables individualmente, aunque siguen viniendo preinstalados.
+* Botón "Actualizar" en la pestaña Módulos para cualquier módulo con nueva versión disponible.
 
 = 1.1.0 =
 * Opciones ahora es un submenú independiente (antes pestaña del hub).
