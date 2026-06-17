@@ -212,6 +212,18 @@ class Ultron {
 
 		<p class="ultron-section-title"><?php _e( 'Módulos instalados', 'ultron' ); ?></p>
 
+		<?php if ( isset( $_GET['updated'] ) ) : ?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php echo sprintf( __( 'Módulo "%s" actualizado correctamente.', 'ultron' ), esc_html( $_GET['updated'] ) ); ?></p>
+			</div>
+		<?php endif; ?>
+
+		<?php if ( isset( $_GET['error'] ) && $_GET['error'] === 'update_failed' ) : ?>
+			<div class="notice notice-error is-dismissible">
+				<p><?php echo sprintf( __( 'No se pudo actualizar el módulo "%s". Revisa la conexión, el token de GitHub o que exista el tag de versión correspondiente.', 'ultron' ), esc_html( $_GET['module'] ?? '' ) ); ?></p>
+			</div>
+		<?php endif; ?>
+
 		<?php if ( empty( $local ) ) : ?>
 			<p><?php _e( 'No hay módulos instalados.', 'ultron' ); ?></p>
 		<?php else : ?>
@@ -243,7 +255,17 @@ class Ultron {
 									<span class="ultron-status-inactive"><?php _e( 'Inactivo', 'ultron' ); ?></span>
 								<?php endif; ?>
 							</td>
-							<td>
+							<td style="display:flex; gap:6px;">
+								<?php if ( isset( $updates[ $slug ] ) ) : ?>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+										<?php wp_nonce_field( 'ultron_module_action' ); ?>
+										<input type="hidden" name="module_slug" value="<?php echo esc_attr( $slug ); ?>">
+										<input type="hidden" name="action" value="ultron_update_module">
+										<button type="submit" class="button">
+											<?php _e( 'Actualizar', 'ultron' ); ?>
+										</button>
+									</form>
+								<?php endif; ?>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 									<?php wp_nonce_field( 'ultron_module_action' ); ?>
 									<input type="hidden" name="module_slug" value="<?php echo esc_attr( $slug ); ?>">

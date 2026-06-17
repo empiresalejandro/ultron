@@ -35,6 +35,7 @@ class Ultron_Modules {
 	public function __construct() {
 		add_action( 'admin_post_ultron_activate_module',   [ $this, 'handle_activate' ] );
 		add_action( 'admin_post_ultron_deactivate_module', [ $this, 'handle_deactivate' ] );
+		add_action( 'admin_post_ultron_update_module',     [ $this, 'handle_update' ] );
 	}
 
 	/**
@@ -224,21 +225,172 @@ class Ultron_Modules {
 	}
 
 	/**
-	 * Carga los módulos activos registrando su archivo principal.
+	 * Maneja la actualización de un módulo desde GitHub.
 	 *
 	 * @return void
 	 */
-	public function load_active_modules(): void {
-		$local = $this->get_local_modules();
+	public function handle_update(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( __( 'No tienes permisos para realizar esta acción.', 'ultron' ) );
+		}
 
-		foreach ( $local as $slug => $module ) {
-			if ( $module['active'] ) {
-				$module_file = $module['path'] . '/module.php';
-				if ( file_exists( $module_file ) ) {
-					require_once $module_file;
-				}
+		check_admin_referer( 'ultron_module_action' );
+
+		$slug     = isset( $_POST['module_slug'] ) ? sanitize_key( $_POST['module_slug'] ) : '';
+		$redirect = admin_url( 'admin.php?page=ultron&tab=modules' );
+
+		if ( empty( $slug ) ) {
+			wp_redirect( add_query_arg( 'error', 'invalid_module', $redirect ) );
+			exit;
+		}
+
+		$result = $this->download_and_install_module( $slug );
+
+		if ( is_wp_error( $result ) ) {
+			wp_redirect( add_query_arg( [ 'error' => 'update_failed', 'module' => $slug ], $redirect ) );
+			exit;
+		}
+
+		wp_redirect( add_query_arg( [ 'updated' => $slug ], $redirect ) );
+		exit;
+	}
+
+	/**
+	 * Descarga e instala/actualiza un módulo desde su repositorio de GitHub,
+	 * usando el tag correspondiente a la versión publicada en modules.json.
+	 *
+	 * @param string $slug Slug del módulo (clave en modules.json).
+	 * @return true|WP_Error
+	 */
+	public function download_and_install_module( string $slug ): bool|WP_Error {
+		$remote = $this->get_remote_modules();
+
+		if ( ! isset( $remote[ $slug ] ) ) {
+			return new WP_Error( 'ultron_module_not_found', __( 'El módulo no existe en el índice remoto.', 'ultron' ) );
+		}
+
+		$module_info = $remote[ $slug ];
+
+		if ( ! empty( $module_info['bundled'] ) ) {
+			return new WP_Error( 'ultron_module_bundled', __( 'Este módulo viene incluido con Ultron y no se actualiza desde GitHub.', 'ultron' ) );
+		}
+
+		if ( empty( $module_info['repo'] ) ) {
+			return new WP_Error( 'ultron_module_no_repo', __( 'El módulo no tiene un repositorio configurado.', 'ultron' ) );
+		}
+
+		$version = $module_info['version'] ?? '';
+
+		if ( empty( $version ) ) {
+			return new WP_Error( 'ultron_module_no_version', __( 'El módulo no tiene una versión definida.', 'ultron' ) );
+		}
+
+		// Construir la URL de descarga vía la API de GitHub (zipball por tag).
+		$download_url = sprintf(
+			'https://api.github.com/repos/%s/zipball/v%s',
+			$module_info['repo'],
+			$version
+		);
+
+		$args = [
+			'timeout'  => 30,
+			'headers'  => [ 'Accept' => 'application/vnd.github+json' ],
+			'stream'   => true,
+			'filename' => wp_tempnam( $slug . '.zip' ),
+		];
+
+		if ( ! empty( $module_info['private'] ) ) {
+			$token = get_option( 'ultron_github_token', '' );
+
+			if ( empty( $token ) ) {
+				return new WP_Error( 'ultron_missing_token', __( 'Este módulo es privado y requiere un token de GitHub configurado en Opciones.', 'ultron' ) );
+			}
+
+			$args['headers']['Authorization'] = 'Bearer ' . $token;
+		}
+
+		$response = wp_remote_get( $download_url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+
+		if ( $code !== 200 ) {
+			@unlink( $args['filename'] );
+			return new WP_Error( 'ultron_download_failed', sprintf( __( 'GitHub respondió con código %d al descargar el módulo.', 'ultron' ), $code ) );
+		}
+
+		$zip_path = $args['filename'];
+
+		// Extraer el zip a una carpeta temporal.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+
+		$tmp_extract_dir = trailingslashit( get_temp_dir() ) . 'ultron-' . $slug . '-' . wp_generate_password( 6, false );
+
+		$unzip_result = unzip_file( $zip_path, $tmp_extract_dir );
+
+		@unlink( $zip_path );
+
+		if ( is_wp_error( $unzip_result ) ) {
+			return $unzip_result;
+		}
+
+		// GitHub empaqueta el contenido dentro de una única carpeta raíz
+		// con nombre tipo "{repo}-{sha}". La localizamos.
+		$extracted_items = glob( $tmp_extract_dir . '/*', GLOB_ONLYDIR );
+
+		if ( empty( $extracted_items ) || ! isset( $extracted_items[0] ) ) {
+			$this->delete_directory( $tmp_extract_dir );
+			return new WP_Error( 'ultron_zip_structure', __( 'No se pudo localizar el contenido del módulo dentro del zip.', 'ultron' ) );
+		}
+
+		$source_dir = $extracted_items[0];
+		$target_dir = ULTRON_MODULES . $slug;
+
+		// Reemplazar el módulo existente, si lo hay.
+		if ( is_dir( $target_dir ) ) {
+			$this->delete_directory( $target_dir );
+		}
+
+		$moved = @rename( $source_dir, $target_dir );
+
+		// Limpiar la carpeta temporal (rename ya movió el contenido si tuvo éxito).
+		$this->delete_directory( $tmp_extract_dir );
+
+		if ( ! $moved ) {
+			return new WP_Error( 'ultron_move_failed', __( 'No se pudo mover el módulo descargado a su carpeta final.', 'ultron' ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Elimina un directorio de forma recursiva.
+	 *
+	 * @param string $dir Ruta del directorio.
+	 * @return void
+	 */
+	private function delete_directory( string $dir ): void {
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+
+		$items = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::CHILD_FIRST
+		);
+
+		foreach ( $items as $item ) {
+			if ( $item->isDir() ) {
+				@rmdir( $item->getPathname() );
+			} else {
+				@unlink( $item->getPathname() );
 			}
 		}
+
+		@rmdir( $dir );
 	}
 
 }

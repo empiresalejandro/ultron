@@ -1,3 +1,9 @@
+= 1.2.0 — 2026 =
+* Integrado Plugin Update Checker (YahnisElsts) para detectar actualizaciones del core desde GitHub, activable desde Opciones.
+* Nueva lógica de descarga e instalación de módulos addon desde su repositorio de GitHub (tags de versión vía la API zipball), soportando repos públicos y privados con token.
+* Botón "Actualizar" en la pestaña Módulos para módulos no-bundled con nueva versión disponible.
+* Ajustado el texto del toggle de actualizaciones: ya no se promete una frecuencia fija, se sigue el ciclo nativo de revisión de WordPress.
+
 = 1.1.0 — 2026 =
 * Reorganización del menú: Opciones pasa a ser submenú independiente (antes pestaña del hub).
 * Nueva pestaña "Información" en el hub: banner de versión, modo de uso y novedades (changelog).

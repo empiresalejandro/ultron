@@ -9,7 +9,6 @@ Thumbs.db
 *.swo
 
 # Dependencies
-/core/vendor/
 node_modules/
 
 # Logs

@@ -137,8 +137,8 @@ class Ultron_Options_Page {
 							<td>
 								<input type="checkbox" id="update_checker" name="update_checker" value="1"
 								       <?php checked( $update_checker, true ); ?>>
-								<label for="update_checker"><?php _e( 'Activar detección automática de actualizaciones (cada 24h)', 'ultron' ); ?></label>
-								<p class="description"><?php _e( 'WordPress avisará cuando haya una nueva versión disponible en GitHub.', 'ultron' ); ?></p>
+								<label for="update_checker"><?php _e( 'Activar detección automática de actualizaciones', 'ultron' ); ?></label>
+								<p class="description"><?php _e( 'WordPress avisará cuando haya una nueva versión disponible en GitHub, siguiendo su ciclo normal de revisión de actualizaciones.', 'ultron' ); ?></p>
 							</td>
 						</tr>
 					</table>
