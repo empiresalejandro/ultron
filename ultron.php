@@ -63,6 +63,5 @@ function ultron_init_update_checker(): void {
 	);
 
 	$update_checker->setBranch( 'main' );
-	$update_checker->getVcsApi()->enableReleaseAssets();
 }
 add_action( 'init', 'ultron_init_update_checker' );
