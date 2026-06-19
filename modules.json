@@ -2,7 +2,7 @@
     "wp-monitor": {
         "name": "WordPress Monitor",
         "description": "Monitor completo de la instalación de WordPress, servidor, configuración, seguridad y endpoints.",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "private": false,
         "repo": "empiresalejandro/ultron-mod-wp-monitor",
         "category": "core",
